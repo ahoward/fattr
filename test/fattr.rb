@@ -77,18 +77,26 @@ BEGIN {
 
   def Testing(*args, &block)
     Class.new(Test::Unit::TestCase) do
-      def self.testno()
-        '%05d' % (@testno ||= 0)
-      ensure
-        @testno += 1
-      end
-
       def self.slug_for(*args)
         string = args.flatten.compact.join('-')
         words = string.to_s.scan(%r/\w+/)
         words.map!{|word| word.gsub %r/[^0-9a-zA-Z_-]/, ''}
         words.delete_if{|word| word.nil? or word.strip.empty?}
         words.join('-').downcase
+      end
+
+      @@testing_subclass_count = 0 unless defined?(@@testing_subclass_count) 
+      @@testing_subclass_count += 1
+      slug = slug_for(*args).gsub(%r/-/,'_')
+      name = ['TESTING', '%03d' % @@testing_subclass_count, slug].delete_if{|part| part.empty?}.join('_')
+      name = name.upcase!
+      const_set(:Name, name)
+      def self.name() const_get(:Name) end
+
+      def self.testno()
+        '%05d' % (@testno ||= 0)
+      ensure
+        @testno += 1
       end
 
       def self.testing(*args, &block)
