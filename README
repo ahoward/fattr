@@ -7,7 +7,6 @@ INSTALL
 URIS
   http://codeforpeople.com/lib/ruby
   http://rubyforge.org/projects/codeforpeople/
-  http://codeforpeople.rubyforge.org/svn/
 
 SYNOPSIS
   fattr.rb is a "fatter attr" for ruby.
@@ -277,6 +276,9 @@ SAMPLES
 
 
 HISTORY
+  1.1.0:
+    ruby19 testing.  move to github.
+
   1.0.2:
     added Fattr shortcut for adding class/module level fattrs
 
