@@ -1,5 +1,5 @@
 module Fattr
-  Fattr::Version = '2.0.0' unless Fattr.const_defined?(:Version)
+  Fattr::Version = '2.1.0' unless Fattr.const_defined?(:Version)
   def self.version() Fattr::Version end
 
   class List < ::Array
@@ -65,25 +65,25 @@ module Fattr
         default = config['default'] if config.has_key?('default')
 
         inheritable = false
-        if Class===self
+        if Module===self
           inheritable = config[:inheritable] if config.has_key?(:inheritable)
           inheritable = config['inheritable'] if config.has_key?('inheritable')
         end
 
         initialize = (
-          block || (
-            unless inheritable
-              lambda{ default }
-            else
-              lambda do
-                if ancestors[1..-1].any?{|ancestor| ancestor.Fattrs.include?(name)}
-                  ancestors[1].send(name)
-                else
-                  default
+          if inheritable
+            lambda do
+              parents = ancestors[1..-1]
+              catch(:value) do
+                parents.each do |parent|
+                  throw(:value, parent.send(name)) if parent.respond_to?(name)
                 end
+                block ? block.call : default
               end
             end
-          )
+          else
+            block || lambda{ default }
+          end
         )
 
         initializer = lambda do |this|
