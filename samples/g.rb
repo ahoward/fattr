@@ -5,7 +5,7 @@
   require 'fattr'
 
   class C
-    class << self
+    class << C
       fattr 'a' => 4
     end
 

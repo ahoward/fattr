@@ -64,6 +64,7 @@ task :gemspec do
 
           Gem::Specification::new do |spec|
             spec.name = #{ lib.inspect }
+            spec.description = 'fattr.rb is a "fatter attr" for ruby'  
             spec.version = #{ version.inspect }
             spec.platform = Gem::Platform::RUBY
             spec.summary = #{ lib.inspect }

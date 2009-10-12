@@ -11,7 +11,7 @@
       42 => 'DEBUG',
     }
 
-    class << self
+    class << Logging
       fattr 'level' => 42
       fattr('level_name'){ Level_names[level] }
     end

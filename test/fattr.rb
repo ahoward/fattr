@@ -60,6 +60,38 @@ Testing Fattr do
     m = Module.new{ Fattr :a => 42 }
     assert{ m.a==42 }
   end
+
+  testing 'that fattrs support simple class inheritable attributes' do
+    a = Class.new{ Fattr :x, :default => 42, :inheritable => true }
+    b = Class.new(a)
+    c = Class.new(b)
+    def a.name() 'a' end
+    def b.name() 'b' end
+    def c.name() 'c' end
+    assert{ c.x==42 }
+    assert{ b.x==42 }
+    assert{ a.x==42 }
+    assert{ b.x=42.0 }
+    assert{ b.x==42.0 }
+    assert{ a.x==42 }
+    assert{ a.x='forty-two' }
+    assert{ a.x=='forty-two' }
+    assert{ b.x==42.0 }
+    assert{ b.x! }
+    assert{ b.x=='forty-two' }
+    assert{ b.x='FORTY-TWO' }
+    assert{ c.x! }
+    assert{ c.x=='FORTY-TWO' }
+  end
+
+  testing 'a list of fattrs can be declared at once' do
+    list = %w( a b c )
+    c = Class.new{ fattrs list }
+    list.each do |attr|
+      assert{ c.fattrs.include?(attr.to_s) }
+      assert{ c.fattrs.include?(attr.to_sym) }
+    end
+  end
 end
 
 

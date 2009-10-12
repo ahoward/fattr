@@ -5,15 +5,12 @@ INSTALL
   gem install fattrs
 
 URIS
-  http://codeforpeople.com/lib/ruby
+  http://github.com/ahoward/fattr
   http://rubyforge.org/projects/codeforpeople/
+  http://codeforpeople.com/
 
 SYNOPSIS
-  fattr.rb is a "fatter attr" for ruby.
-
-  fattr.rb supercedes attributes.rb as that library, even though it added only
-  one method to the global namespace, collided too frequently with user code -
-  in particular rails' code.
+  fattr.rb is a "fatter attr" for ruby
 
   the implementation of fattr.rb borrows many of the best ideas from the
   metakoans.rb ruby quiz
@@ -21,7 +18,7 @@ SYNOPSIS
     http://www.rubyquiz.com/quiz67.html
 
   in particular the solutions of Christian Neukirchen and Florian Gross along
-  with concepts from the original traits.rb lib
+  with concepts from my original traits.rb lib
 
   key features provided by fattrs are
 
@@ -49,7 +46,9 @@ SYNOPSIS
 
     - shortcuts for adding class/module level fattrs
 
-  all this in < 100 lines of code
+    - class inheritable attributes
+
+  all this in 156 lines of code
 
 SAMPLES
 
@@ -126,17 +125,17 @@ SAMPLES
   ~ > cat samples/c.rb
 
     #
-    # multiple values may by given, plain names and key/val pairs may be mixed.
+    # multiple name=>default pairs can be given 
     #
       require 'fattr'
     
       class C
-        fattrs 'x', 'y' => 0b101000, 'z' => 0b10
+        fattrs 'x' => 0b101000, 'y' => 0b10
       end
     
       c = C.new
-      c.x = c.y + c.z
-      p c.x #=> 42
+      z = c.x + c.y
+      p z #=> 42
 
   ~ > ruby samples/c.rb
 
@@ -206,7 +205,6 @@ SAMPLES
     
       conf = Config.new{
         host 'codeforpeople.org'
-    
         port 80
       }
     
@@ -214,7 +212,7 @@ SAMPLES
 
   ~ > ruby samples/e.rb
 
-    #<Config:0x2de88 @port=80, @host="codeforpeople.org">
+    #<Config:0x2cd1c @port=80, @host="codeforpeople.org">
 
 
   <========< samples/f.rb >========>
@@ -234,7 +232,7 @@ SAMPLES
           42 => 'DEBUG',
         }
     
-        class << self
+        class << Logging
           fattr 'level' => 42
           fattr('level_name'){ Level_names[level] }
         end
@@ -260,7 +258,7 @@ SAMPLES
       require 'fattr'
     
       class C
-        class << self
+        class << C
           fattr 'a' => 4
         end
     
@@ -274,8 +272,56 @@ SAMPLES
     "42"
 
 
+  <========< samples/h.rb >========>
+
+  ~ > cat samples/h.rb
+
+    #
+    # class variable inheritance is supported simply
+    #
+      require 'fattr'
+    
+      class A
+        Fattr :x, :default => 42, :inheritable => true
+      end
+    
+      class B < A
+      end
+    
+      class C < B
+      end
+    
+      p C.x #=> 42
+    
+      A.x = 42.0
+      B.x = 'forty-two'
+    
+      p A.x #=> 42.0
+      p B.x #=> 'forty-two'
+      p C.x #=> 42
+    
+      C.x! # re-initialize from closest ancestor (B)
+    
+      p A.x #=> 42.0
+      p B.x #=> 'forty-two'
+      p C.x #=> 'forty-two'
+
+  ~ > ruby samples/h.rb
+
+    42
+    42.0
+    "forty-two"
+    42
+    42.0
+    "forty-two"
+    "forty-two"
+
+
 
 HISTORY
+  2.0.0:
+    support class/module inheritable attributes
+
   1.1.0:
     ruby19 testing.  move to github.
 

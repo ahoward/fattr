@@ -1,12 +1,12 @@
 #
-# multiple values may by given, plain names and key/val pairs may be mixed.
+# multiple name=>default pairs can be given 
 #
   require 'fattr'
 
   class C
-    fattrs 'x', 'y' => 0b101000, 'z' => 0b10
+    fattrs 'x' => 0b101000, 'y' => 0b10
   end
 
   c = C.new
-  c.x = c.y + c.z
-  p c.x #=> 42
+  z = c.x + c.y
+  p z #=> 42

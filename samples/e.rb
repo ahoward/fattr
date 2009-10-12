@@ -11,7 +11,6 @@
 
   conf = Config.new{
     host 'codeforpeople.org'
-
     port 80
   }
 

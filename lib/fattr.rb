@@ -1,6 +1,6 @@
 module Fattr
-  Fattr::VERSION = '1.1.0' unless Fattr.const_defined?(:VERSION)
-  def self.version() Fattr::VERSION end
+  Fattr::Version = '2.0.0' unless Fattr.const_defined?(:Version)
+  def self.version() Fattr::Version end
 
   class List < ::Array
     def << element
@@ -13,12 +13,12 @@ module Fattr
 
     def index!
       @index ||= Hash.new
-      each{|element| @index[element] = true}
+      each{|element| @index[element.to_s] = true}
     end
 
-    def include? element
+    def include?(element)
       @index ||= Hash.new
-      @index[element] ? true : false
+      @index[element.to_s] ? true : false
     end
 
     def initializers
@@ -26,33 +26,79 @@ module Fattr
     end
   end
 
-  def fattrs *a, &b
-    unless a.empty?
+  def fattrs(*args, &block)
+    unless args.empty?
       returned = Hash.new
 
-      hashes, names = a.partition{|x| Hash === x}
-      names_and_defaults = {}
-      hashes.each{|h| names_and_defaults.update h}
-      names.flatten.compact.each{|name| names_and_defaults.update name => nil}
+      args.flatten!
+      args.compact!
+
+      all_hashes = args.all?{|arg| Hash===arg}
+
+      names_and_configs = {}
+
+      if all_hashes
+        args.each do |hash|
+          hash.each do |key, val|
+            name = key.to_s
+            config = Hash===val ? val : {:default => val}
+            names_and_configs[name] = config
+          end
+        end
+      else
+        config = Hash===args.last ? args.pop : {}
+        names = args.select{|arg| Symbol===arg or String===arg}.map{|arg| arg.to_s}
+        names.each do |name|
+          names_and_configs[name] = config
+        end
+      end
 
       initializers = __fattrs__.initializers
 
-      names_and_defaults.each do |name, default|
-        raise NameError, "bad instance variable name '@#{ name }'" if "@#{ name }" =~ %r/[!?=]$/o
+      names_and_configs.each do |name, config|
+        raise(NameError, "bad instance variable name '@#{ name }'") if("@#{ name }" =~ %r/[!?=]$/o)
+
         name = name.to_s
 
-        initialize = b || lambda { default }
-        initializer = lambda do |this|
-          Object.instance_method('instance_eval').bind(this).call &initialize
+        default = nil
+        default = config[:default] if config.has_key?(:default)
+        default = config['default'] if config.has_key?('default')
+
+        inheritable = false
+        if Class===self
+          inheritable = config[:inheritable] if config.has_key?(:inheritable)
+          inheritable = config['inheritable'] if config.has_key?('inheritable')
         end
+
+        initialize = (
+          block || (
+            unless inheritable
+              lambda{ default }
+            else
+              lambda do
+                if ancestors[1..-1].any?{|ancestor| ancestor.Fattrs.include?(name)}
+                  ancestors[1].send(name)
+                else
+                  default
+                end
+              end
+            end
+          )
+        )
+
+        initializer = lambda do |this|
+          Object.instance_method('instance_eval').bind(this).call(&initialize)
+        end
+
         initializer_id = initializer.object_id
+
         __fattrs__.initializers[name] = initializer
 
         compile = lambda do |code|
           begin
-            module_eval code
+            module_eval(code)
           rescue SyntaxError
-            raise SyntaxError, "\n#{ code }\n"
+            raise(SyntaxError, "\n#{ code }\n")
           end
         end
 
@@ -118,36 +164,30 @@ module Fattr
     end
   end
 
-  %w( __fattrs__ __fattr__ fattr ).each{|dst| alias_method dst, 'fattrs'}
+  %w( __fattrs__ __fattr__ fattr ).each{|dst| alias_method(dst, 'fattrs')}
 end
 
 class Module
   include Fattr
 
-  def Fattrs(*a, &b)
+  def Fattrs(*args, &block)
     class << self
       self
-    end.module_eval do
-      fattrs(*a, &b)
-    end
+    end.module_eval{ __fattrs__(*args, &block) }
   end
 
-  def Fattr(*a, &b)
+  def Fattr(*args, &block)
     class << self
       self
-    end.module_eval do
-      fattr(*a, &b)
-    end
+    end.module_eval{ __fattr__(*args, &block) }
   end
 end
 
 class Object
-  def fattrs *a, &b
-    sc = 
-      class << self
-        self
-      end
-    sc.fattrs *a, &b
+  def fattrs(*args, &block)
+    class << self
+      self
+    end.__fattrs__(*args, &block)
   end
-  %w( __fattrs__ __fattr__ fattr ).each{|dst| alias_method dst, 'fattrs'}
+  %w( __fattrs__ __fattr__ fattr ).each{|dst| alias_method(dst, 'fattrs')}
 end
