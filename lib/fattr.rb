@@ -72,7 +72,7 @@ module Fattr
 
         initialize = (
           if inheritable
-            lambda do
+            lambda do |*args|
               parents = ancestors[1..-1]
               catch(:value) do
                 parents.each do |parent|
@@ -82,7 +82,7 @@ module Fattr
               end
             end
           else
-            block || lambda{ default }
+            block || lambda{ |*args| default }
           end
         )
 
