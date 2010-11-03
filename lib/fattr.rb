@@ -123,6 +123,7 @@ module Fattr
         compile[code]
 
       # bang method re-calls any initializer given at declaration time
+=begin
         code = <<-code
           def #{ name }!
             initializer = ObjectSpace._id2ref #{ initializer_id }
@@ -131,6 +132,14 @@ module Fattr
           end
         code
         compile[code]
+=end
+
+        module_eval do
+          define_method :"#{ name }!" do
+            self.send :"#{ name }=", initializer.call(self)
+            self.instance_variable_get :"@#{name}"
+          end
+        end
 
       # query simply defers to getter - cast to bool
         code = <<-code
