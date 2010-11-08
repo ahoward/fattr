@@ -1,5 +1,5 @@
 module Fattr
-  Fattr::Version = '2.1.0' unless Fattr.const_defined?(:Version)
+  Fattr::Version = '2.2.0' unless Fattr.const_defined?(:Version)
   def self.version() Fattr::Version end
 
   class List < ::Array
@@ -72,7 +72,7 @@ module Fattr
 
         initialize = (
           if inheritable
-            lambda do
+            lambda do |*ignored|
               parents = ancestors[1..-1]
               catch(:value) do
                 parents.each do |parent|
@@ -82,7 +82,7 @@ module Fattr
               end
             end
           else
-            block || lambda{ default }
+            block || lambda{|*ignored| default }
           end
         )
 

@@ -10,6 +10,7 @@ Testing Fattr do
 
   testing 'that the basic usage works' do
     o = Class.new{ fattr :a }.new
+    p o.a
     assert{ o.a==nil }
     assert{ o.a=42 }
     assert{ o.a(42.0) }
@@ -123,10 +124,16 @@ BEGIN {
         words.join('-').downcase
       end
 
-      @@testing_subclass_count = 0 unless defined?(@@testing_subclass_count) 
-      @@testing_subclass_count += 1
+      def self.testing_subclass_count
+        @testing_subclass_count ||= 0
+      end
+      def self.testing_subclass_count=(value)
+        @testing_subclass_count = value
+      end
+
+      self.testing_subclass_count += 1
       slug = slug_for(*args).gsub(%r/-/,'_')
-      name = ['TESTING', '%03d' % @@testing_subclass_count, slug].delete_if{|part| part.empty?}.join('_')
+      name = ['TESTING', '%03d' % self.testing_subclass_count, slug].delete_if{|part| part.empty?}.join('_')
       name = name.upcase!
       const_set(:Name, name)
       def self.name() const_get(:Name) end
