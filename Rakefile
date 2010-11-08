@@ -210,6 +210,9 @@ task :release => [:clean, :gemspec, :gem] do
   cmd = "rubyforge login && rubyforge add_release #{ This.rubyforge_project } #{ This.lib } #{ This.version } #{ This.pkgdir }/#{ This.gem }"
   puts cmd
   system cmd
+  cmd = "gem push #{ This.pkgdir }/#{ This.gem }"
+  puts cmd
+  system cmd
 end
 
 
