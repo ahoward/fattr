@@ -1,5 +1,5 @@
 module Fattr
-  Fattr::Version = '2.2.0' unless Fattr.const_defined?(:Version)
+  Fattr::Version = '2.2.1' unless Fattr.const_defined?(:Version)
   def self.version() Fattr::Version end
 
   class List < ::Array
