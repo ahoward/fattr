@@ -150,21 +150,21 @@ module Fattr
         compile[code]
 
         fattrs << name
-        returned[name] = initializer 
+        returned[name] = initializer
       end
 
       returned
     else
       begin
         __fattr_list__
-      rescue NameError
+      rescue NameError, TypeError
         singleton_class =
           class << self
             self
           end
         klass = self
         singleton_class.module_eval do
-          fattr_list = List.new 
+          fattr_list = List.new
           define_method('fattr_list'){ klass == self ? fattr_list : raise(NameError) }
           alias_method '__fattr_list__', 'fattr_list'
         end
