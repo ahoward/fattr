@@ -1,8 +1,11 @@
 This.rubyforge_project = 'codeforpeople'
 This.author = "Ara T. Howard"
 This.email = "ara.t.howard@gmail.com"
-This.homepage = "http://github.com/ahoward/#{ This.lib }/tree/master"
+This.homepage = "https://github.com/ahoward/#{ This.lib }"
 
+task :license do
+  open('LICENSE', 'w'){|fd| fd.puts "same as ruby's"}
+end
 
 task :default do
   puts((Rake::Task.tasks.map{|task| task.name.gsub(/::/,':')} - ['default']).sort)
@@ -26,11 +29,10 @@ def run_tests!(which = nil)
         
   div = ('=' * 119)
   line = ('-' * 119)
-  helper = "-r ./test/helper.rb" if test(?e, "./test/helper.rb")
 
   test_rbs.each_with_index do |test_rb, index|
     testno = index + 1
-    command = "#{ This.ruby } -I ./lib -I ./test/lib #{ helper } #{ test_rb }"
+    command = "#{ This.ruby } -w -I ./lib -I ./test/lib #{ test_rb }"
 
     puts
     say(div, :color => :cyan, :bold => true)
@@ -59,9 +61,9 @@ end
 
 
 task :gemspec do
-  ignore_extensions = 'git', 'svn', 'tmp', /sw./, 'bak', 'gem'
-  ignore_directories = %w[ pkg ]
-  ignore_files = %w[ test/log ]
+  ignore_extensions = ['git', 'svn', 'tmp', /sw./, 'bak', 'gem']
+  ignore_directories = ['pkg']
+  ignore_files = ['test/log']
 
   shiteless = 
     lambda do |list|
@@ -87,10 +89,11 @@ task :gemspec do
   version     = This.version
   files       = shiteless[Dir::glob("**/**")]
   executables = shiteless[Dir::glob("bin/*")].map{|exe| File.basename(exe)}
-  has_rdoc    = true #File.exist?('doc')
+  #has_rdoc    = true #File.exist?('doc')
   test_files  = "test/#{ lib }.rb" if File.file?("test/#{ lib }.rb")
   summary     = object.respond_to?(:summary) ? object.summary : "summary: #{ lib } kicks the ass"
   description = object.respond_to?(:description) ? object.description : "description: #{ lib } kicks the ass"
+  license     = object.respond_to?(:license) ? object.license : "same as ruby's"
 
   if This.extensions.nil?
     This.extensions = []
@@ -116,16 +119,17 @@ task :gemspec do
             spec.platform = Gem::Platform::RUBY
             spec.summary = #{ lib.inspect }
             spec.description = #{ description.inspect }
+            spec.license = #{ license.inspect }
 
-            spec.files = #{ files.inspect }
+            spec.files =\n#{ files.sort.pretty_inspect }
             spec.executables = #{ executables.inspect }
             
             spec.require_path = "lib"
 
-            spec.has_rdoc = #{ has_rdoc.inspect }
             spec.test_files = #{ test_files.inspect }
 
-          # spec.add_dependency 'lib', '>= version'
+          ### spec.add_dependency 'lib', '>= version'
+          #### spec.add_dependency 'map'
 
             spec.extensions.push(*#{ extensions.inspect })
 
@@ -139,8 +143,9 @@ task :gemspec do
     end
 
   Fu.mkdir_p(This.pkgdir)
-  This.gemspec = File.join(This.pkgdir, "gemspec.rb")
-  open("#{ This.gemspec }", "w"){|fd| fd.puts(template)}
+  gemspec = "#{ lib }.gemspec"
+  open(gemspec, "w"){|fd| fd.puts(template)}
+  This.gemspec = gemspec
 end
 
 task :gem => [:clean, :gemspec] do
@@ -150,8 +155,8 @@ task :gem => [:clean, :gemspec] do
   `#{ cmd }`
   after = Dir['*.gem']
   gem = ((after - before).first || after.first) or abort('no gem!')
-  Fu.mv gem, This.pkgdir
-  This.gem = File.basename(gem)
+  Fu.mv(gem, This.pkgdir)
+  This.gem = File.join(This.pkgdir, File.basename(gem))
 end
 
 task :readme do
@@ -175,8 +180,8 @@ task :readme do
   end
 
   template = 
-    if test(?e, 'readme.erb')
-      Template{ IO.read('readme.erb') }
+    if test(?e, 'README.erb')
+      Template{ IO.read('README.erb') }
     else
       Template {
         <<-__
@@ -207,12 +212,18 @@ task :release => [:clean, :gemspec, :gem] do
   gems = Dir[File.join(This.pkgdir, '*.gem')].flatten
   raise "which one? : #{ gems.inspect }" if gems.size > 1
   raise "no gems?" if gems.size < 1
-  cmd = "rubyforge login && rubyforge add_release #{ This.rubyforge_project } #{ This.lib } #{ This.version } #{ This.pkgdir }/#{ This.gem }"
+
+  cmd = "gem push #{ This.gem }"
   puts cmd
-  system cmd
-  cmd = "gem push #{ This.pkgdir }/#{ This.gem }"
+  puts
+  system(cmd)
+  abort("cmd(#{ cmd }) failed with (#{ $?.inspect })") unless $?.exitstatus.zero?
+
+  cmd = "rubyforge login && rubyforge add_release #{ This.rubyforge_project } #{ This.lib } #{ This.version } #{ This.gem }"
   puts cmd
-  system cmd
+  puts
+  system(cmd)
+  abort("cmd(#{ cmd }) failed with (#{ $?.inspect })") unless $?.exitstatus.zero?
 end
 
 
@@ -228,6 +239,7 @@ BEGIN {
   require 'erb'
   require 'fileutils'
   require 'rbconfig'
+  require 'pp'
 
 # fu shortcut
 #
@@ -286,11 +298,11 @@ BEGIN {
     def unindent(s)
       indent = nil
       s.each_line do |line|
-        next if line =~ %r/^\s*$/
-        indent = line[%r/^\s*/] and break
-      end
-      indent ? s.gsub(%r/^#{ indent }/, "") : s
+      next if line =~ %r/^\s*$/
+      indent = line[%r/^\s*/] and break
     end
+    indent ? s.gsub(%r/^#{ indent }/, "") : s
+  end
     extend self
   end
 
@@ -298,11 +310,11 @@ BEGIN {
 #
   class Template
     def initialize(&block)
-      @block = block.binding
+      @block = block
       @template = block.call.to_s
     end
     def expand(b=nil)
-      ERB.new(Util.unindent(@template)).result(b||@block)
+      ERB.new(Util.unindent(@template)).result((b||@block).binding)
     end
     alias_method 'to_s', 'expand'
   end
