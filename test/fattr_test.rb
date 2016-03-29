@@ -99,6 +99,17 @@ Testing Fattr do
       assert{ c.fattrs.include?(attr.to_sym) }
     end
   end
+
+  testing 'that all fattrs can be got via object.fattrs.to_hash' do
+    c = Class.new{ fattr :a; fattr :b; fattr(:c){ 'forty-two' } }
+    o = c.new
+    o.a = 42
+    o.b = 42.0
+    hash = assert{ o.fattrs.to_hash }
+    assert{ hash['a'] == 42 }
+    assert{ hash['b'] == 42.0 }
+    assert{ hash['c'] == 'forty-two' }
+  end
 end
 
 

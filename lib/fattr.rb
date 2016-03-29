@@ -1,5 +1,5 @@
 module Fattr
-  Fattr::Version = '2.2.2' unless Fattr.const_defined?(:Version)
+  Fattr::Version = '2.3.0' unless Fattr.const_defined?(:Version)
   def Fattr.version() Fattr::Version end
 
   def Fattr.description
@@ -7,6 +7,12 @@ module Fattr
   end
 
   class List < ::Array
+    attr_accessor :object
+
+    def initialize(*args, &block)
+      super(*args, &block)
+    end
+
     def << element
       super
       self
@@ -28,11 +34,36 @@ module Fattr
     def initializers
       @initializers ||= Hash.new
     end
+
+    def to_hash
+      if @object
+        list = @object.class.fattrs + @object.fattrs
+        list.inject(Hash.new){|hash, fattr| hash.update(fattr => @object.send(fattr))}
+      end
+    end
+
+    def to_h
+      to_hash
+    end
+
+    def for(object)
+      @object = object
+      self
+    end
+  end
+
+  class Result < ::Hash
+    attr_accessor :object
+
+    def for(object)
+      @object = object
+      self
+    end
   end
 
   def fattrs(*args, &block)
     unless args.empty?
-      returned = Hash.new
+      returned = Fattr::Result.new
 
       args.flatten!
       args.compact!
@@ -186,13 +217,13 @@ class Module
   def Fattrs(*args, &block)
     class << self
       self
-    end.module_eval{ __fattrs__(*args, &block) }
+    end.module_eval{ __fattrs__(*args, &block) }.for(self)
   end
 
   def Fattr(*args, &block)
     class << self
       self
-    end.module_eval{ __fattr__(*args, &block) }
+    end.module_eval{ __fattr__(*args, &block) }.for(self)
   end
 end
 
@@ -200,7 +231,7 @@ class Object
   def fattrs(*args, &block)
     class << self
       self
-    end.__fattrs__(*args, &block)
+    end.__fattrs__(*args, &block).for(self)
   end
   %w( __fattrs__ __fattr__ fattr ).each{|dst| alias_method(dst, 'fattrs')}
 end

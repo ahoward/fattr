@@ -212,7 +212,8 @@ SAMPLES
 
   ~ > ruby samples/e.rb
 
-    #<Config:0x2cd1c @port=80, @host="codeforpeople.org">
+    samples/e.rb:7: Use RbConfig instead of obsolete and deprecated Config.
+    samples/e.rb:7:in `<main>': Config is not a class (TypeError)
 
 
   <========< samples/f.rb >========>
@@ -317,8 +318,42 @@ SAMPLES
     "forty-two"
 
 
+  <========< samples/i.rb >========>
+
+  ~ > cat samples/i.rb
+
+    #
+    # you can retrieve all fattrs as a list, or a hash with values included
+    #
+      require 'fattr'
+    
+      class C
+        fattr(:a)
+        fattr(:b){ a.to_f }
+      end
+    
+      o = C.new
+    
+      o.fattr(:c)
+      o.fattr(:d){ self.c.upcase }
+    
+      o.a = 42
+      o.c = 'forty-two' 
+    
+      p o.fattrs.to_hash #=> {"a"=>42, "b"=>42.0, "c"=>"forty-two", "d"=>"FORTY-TWO"}
+      p o.fattrs         #=> ["c", "d"]
+
+  ~ > ruby samples/i.rb
+
+    {"a"=>42, "b"=>42.0, "c"=>"forty-two", "d"=>"FORTY-TWO"}
+    ["c", "d"]
+
+
 
 HISTORY
+  2.3.0
+    support for "object.fattrs.to_hash"
+
   2.0.0:
     support class/module inheritable attributes
 
