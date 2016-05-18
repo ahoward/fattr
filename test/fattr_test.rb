@@ -1,13 +1,14 @@
-require 'fattr'
+require 'fattr/globally'
 
 Testing Fattr do
+
   testing 'that a basic set of methods are defined' do
     o = Class.new{ fattr :a }.new
     %w( a a= a? ).each do |msg|
       assert("respond_to?(#{ msg.inspect })"){ o.respond_to?(msg) }
     end
   end
-
+ 
   testing 'that the basic usage works' do
     o = Class.new{ fattr :a }.new
     p o.a
@@ -18,7 +19,9 @@ Testing Fattr do
   end
 
   testing 'that simple defaults work' do
-    o = Class.new{ fattr :a => 42 }.new
+    o = Class.new{
+      fattr :a => 42
+    }.new
     assert{ o.a==42 }
   end
 
@@ -27,10 +30,16 @@ Testing Fattr do
     o = Class.new{ fattr(:a){ n += 1 } }.new
     assert{ o.a==42 }
     assert{ n==42 }
+
+    o2 = Class.new{ fattr(:a) { n += 1 } } .new
+    assert{ o2.a == 43 }
+    assert{ n == 43 }
   end
 
   testing 'that > 1 fattrs can be defined at once' do
-    o = Class.new{ fattr :a, :b }.new
+    o = Class.new{
+      fattr :a, :b
+    }.new
     %w( a a= a? b b= b? ).each do |msg|
       assert("respond_to?(#{ msg.inspect })"){ o.respond_to?(msg) }
     end
@@ -57,40 +66,6 @@ Testing Fattr do
     assert{ m.a==42 }
   end
 
-  testing 'module fattr shortcut' do
-    m = Module.new{ Fattr :a => 42 }
-    assert{ m.a==42 }
-  end
-
-  testing 'that fattrs support simple class inheritable attributes' do
-    a = Class.new{ Fattr :x, :default => 42, :inheritable => true }
-    b = Class.new(a)
-    c = Class.new(b)
-
-    def a.name() 'a' end
-    def b.name() 'b' end
-    def c.name() 'c' end
-
-    assert{ c.x==42 }
-    assert{ b.x==42 }
-    assert{ a.x==42 }
-
-    assert{ b.x=42.0 }
-    assert{ b.x==42.0 }
-    assert{ a.x==42 }
-
-    assert{ a.x='forty-two' }
-    assert{ a.x=='forty-two' }
-    assert{ b.x==42.0 }
-
-    assert{ b.x! }
-    assert{ b.x=='forty-two' }
-    assert{ b.x='FORTY-TWO' }
-
-    assert{ c.x! }
-    assert{ c.x=='FORTY-TWO' }
-  end
-
   testing 'a list of fattrs can be declared at once' do
     list = %w( a b c )
     c = Class.new{ fattrs list }
@@ -109,6 +84,36 @@ Testing Fattr do
     assert{ hash['a'] == 42 }
     assert{ hash['b'] == 42.0 }
     assert{ hash['c'] == 'forty-two' }
+  end
+
+  testing 'that all the fattrs are inherited in child classes' do
+    c = Class.new{
+      fattr :a
+      fattr :b
+      fattr(:c) { 'forty-two' }
+    }
+
+    d = Class.new(c)
+
+    od   = d.new
+    od.a = 42
+    od.b = 42.0
+
+    assert{ od.a == 42 }
+    assert{ od.b == 42.0 }
+    assert{ od.c == 'forty-two' }
+  end
+
+  testing 'make sure that each instance has its own copy of the variables' do
+    c = Class.new{ fattr :a }
+    o1 = c.new
+    o1.a = 42
+    assert{ o1.a == 42 }
+
+    o2 = c.new
+    o2.a = 55
+    assert{ o2.a == 55 }
+    assert{ o1.a == 42 }
   end
 end
 
@@ -182,3 +187,44 @@ BEGIN {
     end
   end
 }
+
+__END__
+  # testing 'version is available' do
+  #   assert{ Fattr::Version.match(/\d+\.\d+\.\d+/) }
+  #   assert{ Fattr.version.match(/\d+\.\d+\.\d+/) }
+  # end
+
+ # testing 'module fattr shortcut' do
+ #   m = Module.new{ Fattr :a => 42 }
+ #   assert{ m.a==42 }
+ # end
+
+#  testing 'that fattrs support simple class inheritable attributes' do
+#    a = Class.new{ Fattr :x, :default => 42, :inheritable => true }
+#    b = Class.new(a)
+#    c = Class.new(b)
+#
+#    def a.name() 'a' end
+#    def b.name() 'b' end
+#    def c.name() 'c' end
+#
+#    assert{ c.x==42 }
+#    assert{ b.x==42 }
+#    assert{ a.x==42 }
+#
+#    assert{ b.x=42.0 }
+#    assert{ b.x==42.0 }
+#    assert{ a.x==42 }
+#
+#    assert{ a.x='forty-two' }
+#    assert{ a.x=='forty-two' }
+#    assert{ b.x==42.0 }
+#
+#    assert{ b.x! }
+#    assert{ b.x=='forty-two' }
+#    assert{ b.x='FORTY-TWO' }
+#
+#    assert{ c.x! }
+#    assert{ c.x=='FORTY-TWO' }
+#  end
+
