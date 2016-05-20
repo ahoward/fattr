@@ -1,6 +1,5 @@
 require 'fattr/attributes'
 module Fattr
-
   # How we get this thing all going
   #
   def self.extended(other)
@@ -8,7 +7,7 @@ module Fattr
   end
 
   def fattr(*attributes, &block)
-    __define_attributes(:attributes => attributes, :default => block)
+    __define_attributes(attributes: attributes, default: block)
   end
   alias fattrs fattr
 
@@ -32,9 +31,7 @@ module Fattr
     end
   end
 
-  def __define_attributes(options)
-    attributes = options[:attributes]
-    default    = options[:default]
+  def __define_attributes(attributes:, default:)
     attributes.flatten.each do |arg|
       case arg
       when Symbol, String
@@ -85,7 +82,5 @@ module Fattr
   def __fattrs
     @__fattrs ||= Attributes.new
   end
-
 end
-
 require 'fattr/version'

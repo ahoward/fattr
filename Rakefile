@@ -7,9 +7,9 @@ task :license do
   open('LICENSE', 'w'){|fd| fd.puts "same as ruby's"}
 end
 
-task :default do
-  puts((Rake::Task.tasks.map{|task| task.name.gsub(/::/,':')} - ['default']).sort)
-end
+task :default => :test
+  #puts((Rake::Task.tasks.map{|task| task.name.gsub(/::/,':')} - ['default']).sort)
+
 
 task :test do
   run_tests!

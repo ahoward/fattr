@@ -2,19 +2,26 @@ require 'fattr/globally'
 
 Testing Fattr do
 
+  testing 'version is available' do
+    assert{ Fattr::Version.match(/\d+\.\d+\.\d+/) }
+    assert{ Fattr.version.match(/\d+\.\d+\.\d+/) }
+  end
+
   testing 'that a basic set of methods are defined' do
     o = Class.new{ fattr :a }.new
     %w( a a= a? ).each do |msg|
       assert("respond_to?(#{ msg.inspect })"){ o.respond_to?(msg) }
     end
   end
- 
+
   testing 'that the basic usage works' do
     o = Class.new{ fattr :a }.new
     p o.a
     assert{ o.a==nil }
     assert{ o.a=42 }
-    assert{ o.a(42.0) }
+
+    o.a(42.0)
+    assert{ o.a==42.0 }
     assert{ o.a? }
   end
 
@@ -115,6 +122,40 @@ Testing Fattr do
     assert{ o2.a == 55 }
     assert{ o1.a == 42 }
   end
+
+  # testing 'module fattr shortcut' do
+  #   m = Module.new{ Fattr :a => 42 }
+  #   assert{ m.a==42 }
+  # end
+
+  #  testing 'that fattrs support simple class inheritable attributes' do
+  #    a = Class.new{ Fattr :x, :default => 42, :inheritable => true }
+  #    b = Class.new(a)
+  #    c = Class.new(b)
+  #
+  #    def a.name() 'a' end
+  #    def b.name() 'b' end
+  #    def c.name() 'c' end
+  #
+  #    assert{ c.x==42 }
+  #    assert{ b.x==42 }
+  #    assert{ a.x==42 }
+  #
+  #    assert{ b.x=42.0 }
+  #    assert{ b.x==42.0 }
+  #    assert{ a.x==42 }
+  #
+  #    assert{ a.x='forty-two' }
+  #    assert{ a.x=='forty-two' }
+  #    assert{ b.x==42.0 }
+  #
+  #    assert{ b.x! }
+  #    assert{ b.x=='forty-two' }
+  #    assert{ b.x='FORTY-TWO' }
+  #
+  #    assert{ c.x! }
+  #    assert{ c.x=='FORTY-TWO' }
+  #  end
 end
 
 
@@ -161,7 +202,7 @@ BEGIN {
       end
 
       def self.testing(*args, &block)
-        method = ["test", testno, slug_for(*args)].delete_if{|part| part.empty?}.join('_')
+        ["test", testno, slug_for(*args)].delete_if{|part| part.empty?}.join('_')
         define_method("test_#{ testno }_#{ slug_for(*args) }", &block)
       end
 
@@ -182,49 +223,10 @@ BEGIN {
         end
       end
 
-      module_eval &block
+      module_eval(&block)
       self
     end
   end
 }
 
-__END__
-  # testing 'version is available' do
-  #   assert{ Fattr::Version.match(/\d+\.\d+\.\d+/) }
-  #   assert{ Fattr.version.match(/\d+\.\d+\.\d+/) }
-  # end
-
- # testing 'module fattr shortcut' do
- #   m = Module.new{ Fattr :a => 42 }
- #   assert{ m.a==42 }
- # end
-
-#  testing 'that fattrs support simple class inheritable attributes' do
-#    a = Class.new{ Fattr :x, :default => 42, :inheritable => true }
-#    b = Class.new(a)
-#    c = Class.new(b)
-#
-#    def a.name() 'a' end
-#    def b.name() 'b' end
-#    def c.name() 'c' end
-#
-#    assert{ c.x==42 }
-#    assert{ b.x==42 }
-#    assert{ a.x==42 }
-#
-#    assert{ b.x=42.0 }
-#    assert{ b.x==42.0 }
-#    assert{ a.x==42 }
-#
-#    assert{ a.x='forty-two' }
-#    assert{ a.x=='forty-two' }
-#    assert{ b.x==42.0 }
-#
-#    assert{ b.x! }
-#    assert{ b.x=='forty-two' }
-#    assert{ b.x='FORTY-TWO' }
-#
-#    assert{ c.x! }
-#    assert{ c.x=='FORTY-TWO' }
-#  end
 
