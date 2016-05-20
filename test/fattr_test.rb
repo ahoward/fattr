@@ -16,7 +16,6 @@ Testing Fattr do
 
   testing 'that the basic usage works' do
     o = Class.new{ fattr :a }.new
-    p o.a
     assert{ o.a==nil }
     assert{ o.a=42 }
 
@@ -123,39 +122,62 @@ Testing Fattr do
     assert{ o1.a == 42 }
   end
 
+  testing 'ensure that initialization blocks are executed in the context of the instance' do
+    c = Class.new{
+      fattr :a => 42
+      fattr(:b) { "#{a}-b" }
+      fattr :c => lambda { "#{a}-c" }
+    }
+
+    o = c.new
+    assert{ o.b == "42-b" }
+    o.a = 99
+    assert{ o.c == "99-c" }
+  end
+
+  testing 'class fattr shorcut' do
+    c = Class.new{
+      Fattr :a => 42
+    }
+    assert{ c.a == 42 }
+  end
+
   # testing 'module fattr shortcut' do
-  #   m = Module.new{ Fattr :a => 42 }
+  #   m = Module.new{
+  #     Fattr :a => 42
+  #   }
   #   assert{ m.a==42 }
   # end
 
-  #  testing 'that fattrs support simple class inheritable attributes' do
-  #    a = Class.new{ Fattr :x, :default => 42, :inheritable => true }
-  #    b = Class.new(a)
-  #    c = Class.new(b)
-  #
-  #    def a.name() 'a' end
-  #    def b.name() 'b' end
-  #    def c.name() 'c' end
-  #
-  #    assert{ c.x==42 }
-  #    assert{ b.x==42 }
-  #    assert{ a.x==42 }
-  #
-  #    assert{ b.x=42.0 }
-  #    assert{ b.x==42.0 }
-  #    assert{ a.x==42 }
-  #
-  #    assert{ a.x='forty-two' }
-  #    assert{ a.x=='forty-two' }
-  #    assert{ b.x==42.0 }
-  #
-  #    assert{ b.x! }
-  #    assert{ b.x=='forty-two' }
-  #    assert{ b.x='FORTY-TWO' }
-  #
-  #    assert{ c.x! }
-  #    assert{ c.x=='FORTY-TWO' }
-  #  end
+   testing 'that fattrs support simple class inheritable attributes' do
+     #a = Class.new{ Fattr :x, :default => 42, :inheritable => true }
+     a = Class.new{ Fattr :x => 42 }
+     b = Class.new(a)
+     c = Class.new(b)
+  
+     def a.name() 'a' end
+     def b.name() 'b' end
+     def c.name() 'c' end
+  
+     assert{ c.x==42 }
+     assert{ b.x==42 }
+     assert{ a.x==42 }
+  
+     assert{ b.x=42.0 }
+     assert{ b.x==42.0 }
+     assert{ a.x==42 }
+  
+     assert{ a.x='forty-two' }
+     assert{ a.x=='forty-two' }
+     assert{ b.x==42.0 }
+  
+     #assert{ b.x! }
+     #assert{ b.x=='forty-two' }
+     #assert{ b.x='FORTY-TWO' }
+  
+     #assert{ c.x! }
+     #assert{ c.x=='FORTY-TWO' }
+   end
 end
 
 

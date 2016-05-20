@@ -6,10 +6,22 @@ module Fattr
     other.include(InstanceMethods)
   end
 
+  # def self.included(other)
+  #   other.include(InstanceMethods)
+  #   other.extend(ClassMethods)
+  # end
+
   def fattr(*attributes, &block)
     __define_attributes(attributes: attributes, default: block)
   end
   alias fattrs fattr
+
+  def Fattr(*attributes, &block)
+    singleton_class.instance_exec do
+      __define_attributes(attributes: attributes, default: block)
+    end
+  end
+  module_function :Fattr
 
   module InstanceMethods
     def fattrs
@@ -27,7 +39,7 @@ module Fattr
     if thing.kind_of?(Proc)
       thing
     else
-      lambda{ thing }
+      lambda{ |*args| thing }
     end
   end
 
@@ -55,14 +67,16 @@ module Fattr
   end
 
   def __define_reader(name, default)
+    varname = "@#{name}"
     define_method(name.to_sym) do |*args|
-      varname = "@#{name}"
       if value = args.shift then
         instance_variable_set(varname, value)
       elsif instance_variable_defined?(varname)
         instance_variable_get(varname)
       else
-        instance_variable_set(varname, default.call)
+        # we want the lambda to be executed within the context of self
+        value = instance_exec(&default)
+        instance_variable_set(varname, value)
       end
     end
   end
