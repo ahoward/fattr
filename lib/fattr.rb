@@ -53,7 +53,7 @@ module Fattr
     __define_reader(attr)
     __define_writer(attr)
     __define_question(attr)
- #   __define_bang(attr)
+    __define_bang(attr)
   end
 
   def __define_reader(attr)
@@ -87,12 +87,20 @@ module Fattr
   def __define_bang(attr)
     define_method("#{attr.name}!") do
       value = instance_exec(&attr.default)
-      instance_variable_set("@#{name}", value)
+      if attr.inheritable? then
+        parent = ancestors[1..-1].find { |a| a.respond_to?(attr.name) }
+        value = parent.send(attr.name) if parent
+      end
+      instance_variable_set("@#{attr.name}", value)
     end
   end
 
   def __fattrs
     @__fattrs ||= AttributeSet.new
+  end
+
+  def __fetch_fattr(name)
+    __fattrs.fetch(name)
   end
 end
 require 'fattr/version'

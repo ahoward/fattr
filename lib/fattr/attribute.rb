@@ -11,6 +11,10 @@ module Fattr
       @inheritable = inheritable
     end
 
+    def inheritable?
+      !!@inheritable
+    end
+
     private
 
     def initializer_from(thing)

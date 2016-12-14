@@ -149,8 +149,9 @@ Testing Fattr do
     assert{ m.a == 42 }
   end
 
-     #a = Class.new{ Fattr :x, :default => 42, :inheritable => true }
-     a = Class.new{ Fattr :x => 42 }
+  testing 'that fattrs support simple class inheritable attributes' do
+
+     a = Class.new{ Fattr :x, :default => 42, :inheritable => true }
      b = Class.new(a)
      c = Class.new(b)
 
@@ -169,13 +170,13 @@ Testing Fattr do
      assert{ a.x='forty-two' }
      assert{ a.x=='forty-two' }
      assert{ b.x==42.0 }
-  
-     #assert{ b.x! }
-     #assert{ b.x=='forty-two' }
-     #assert{ b.x='FORTY-TWO' }
-  
-     #assert{ c.x! }
-     #assert{ c.x=='FORTY-TWO' }
+
+     assert{ b.x! }
+     assert{ b.x=='forty-two' }
+     assert{ b.x='FORTY-TWO' }
+
+     assert{ c.x! }
+     assert{ c.x=='FORTY-TWO' }
    end
 end
 
