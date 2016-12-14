@@ -1,5 +1,6 @@
 LICENSE
-README.erb
+Manifest.txt
+README.md
 Rakefile
 lib/fattr.rb
 lib/fattr/attribute.rb
@@ -7,7 +8,6 @@ lib/fattr/attribute_parser.rb
 lib/fattr/attribute_set.rb
 lib/fattr/globally.rb
 lib/fattr/version.rb
-lib/old_fattr.rb
 samples/a.rb
 samples/b.rb
 samples/c.rb
@@ -17,4 +17,9 @@ samples/f.rb
 samples/g.rb
 samples/h.rb
 samples/i.rb
-test/fattr_test.rb
+tasks/default.rake
+tasks/this.rb
+test/test_attribute_parser.rb
+test/test_fattr.rb
+test/test_helper.rb
+test/test_version.rb
