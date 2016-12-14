@@ -15,7 +15,7 @@ module Fattr
   module AttributeParser
     #
     #
-    def self.call(args, kwargs, block)
+    def self.call(args = [], kwargs = {}, block = nil)
       return [] if args.empty? && kwargs.empty?
 
       # fattr [:a, :b, :c]
@@ -35,7 +35,7 @@ module Fattr
       # :a, :b, :c, :foo => "wibble", :bar => "baz"
       if only_attributes_with_defaults?(args, kwargs, block) ||
           only_named_attributes?(args, kwargs, block) ||
-          named_attributes_some_with_defaults(args, kwargs, block) then
+          named_attributes_some_with_defaults?(args, kwargs, block) then
         return attributes_from_args_and_kwargs(args, kwargs)
       end
 
@@ -57,7 +57,7 @@ module Fattr
       if (args.size > 1) && kwargs.any? then
         raise InvalidAttributeError, "Cannot have a list of attributes AND an attribute :default with a default value"     if kwargs.has_key?(:default)
         raise InvalidAttributeError, "Cannot have a list of attributes AND an attribute :inheritable with a default value" if kwargs.has_key?(:inheritable)
-        raise InvalidAttributeError, "Cannot ahve a list of attributes and a default block" if block
+        raise InvalidAttributeError, "Cannot have a list of attributes and a default block" if block
         true
       else
         false
