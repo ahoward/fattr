@@ -96,9 +96,5 @@ module Fattr
   def __fattrs
     @__fattrs ||= AttributeSet.new
   end
-
-  def __fetch_fattr(name)
-    __fattrs.fetch(name)
-  end
 end
 require 'fattr/version'
