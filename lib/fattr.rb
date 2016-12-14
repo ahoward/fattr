@@ -2,7 +2,6 @@ require 'fattr/attribute_set'
 require 'fattr/attribute'
 require 'fattr/attribute_parser'
 
-require 'pry'
 module Fattr
   # How we get this thing all going
   #
@@ -21,7 +20,6 @@ module Fattr
   alias fattrs fattr
 
   def Fattr(*args, **kwargs, &block)
-    require 'pry'
     attributes = AttributeParser.call(args, kwargs, block)
     singleton_class.instance_exec do
       __define_attributes(attributes)
