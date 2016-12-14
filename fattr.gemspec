@@ -18,7 +18,7 @@ Gem::Specification.new do |s|
   s.homepage = "http://github.com/ahoward/fattr".freeze
   s.licenses = ["MIT".freeze]
   s.rdoc_options = ["--main".freeze, "README.md".freeze, "--markup".freeze, "tomdoc".freeze]
-  s.required_ruby_version = Gem::Requirement.new(">= 1.9.3".freeze)
+  s.required_ruby_version = Gem::Requirement.new(">= 2.0.0".freeze)
   s.rubygems_version = "2.5.2".freeze
   s.summary = "fattr.rb is a \"fatter attr\" for ruby".freeze
 
