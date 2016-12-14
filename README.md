@@ -1,56 +1,49 @@
-NAME
+# NAME
+
   fattr.rb
 
-INSTALL
+# INSTALL
+
   gem install fattrs
 
-URIS
-  http://github.com/ahoward/fattr
-  http://rubyforge.org/projects/codeforpeople/
-  http://codeforpeople.com/
+# URIS
 
-SYNOPSIS
+  * http://github.com/ahoward/fattr
+  * http://rubyforge.org/projects/codeforpeople/
+  * http://codeforpeople.com/
+
+# SYNOPSIS
+
   fattr.rb is a "fatter attr" for ruby
 
-  the implementation of fattr.rb borrows many of the best ideas from the
-  metakoans.rb ruby quiz
+  The implementation of fattr.rb borrows many of the best ideas from the metakoans.rb ruby quiz
 
     http://www.rubyquiz.com/quiz67.html
 
-  in particular the solutions of Christian Neukirchen and Florian Gross along
-  with concepts from my original traits.rb lib
+  In particular the solutions of Christian Neukirchen and Florian Gross along with concepts from my original traits.rb lib
 
-  key features provided by fattrs are
+  Key features provided by fattrs are:
 
-    - ability to specify default values for attrs and definition time.  values
+    * ability to specify default values for attrs and definition time.  values
       can be literal objects or blocks, which are evaluated in the context of
       self to initialize the variable
-
-    - classes remember which fattrs they've defined and this information is
-     available to client code
-
-    - a whole suite of methods is defined by calls to #fattrs including
-     getter, setter, query (var?) and banger (var! - which forces
-     re-initialization from the default value/block)
-
-    - ability to define multiple fattrs at once using key => value pairs
-
-    - fast lookup of whether or not a class has defined a certain fattr
-
-    - fattrs can be defined on objects on a per singleton basis
-
-    - getters acts as setters if an argument is given to them
-
-    - block caching, calling an fattr with a block sets the instance
+    * classes remember which fattrs they've defined and this information is
+      available to client code
+    * a whole suite of methods is defined by calls to #fattrs including
+      getter, setter, query (var?) and banger (var! - which forces
+      re-initialization from the default value/block)
+    * ability to define multiple fattrs at once using key => value pairs
+    * fast lookup of whether or not a class has defined a certain fattr
+    * fattrs can be defined on objects on a per singleton basis
+    * getters acts as setters if an argument is given to them
+    * block caching, calling an fattr with a block sets the instance
       variable to that block
-
-    - shortcuts for adding class/module level fattrs
-
-    - class inheritable attributes
+    * shortcuts for adding class/module level fattrs
+    * class inheritable attributes
 
   all this in 156 lines of code
 
-SAMPLES
+# SAMPLES
 
   <========< samples/a.rb >========>
 
@@ -60,17 +53,17 @@ SAMPLES
     # basic usage is like attr, but note that fattr defines a suite of methods
     #
       require 'fattr'
-    
+
       class C
         fattr 'a'
       end
-    
+
       c = C.new
-    
+
       c.a = 42
       p c.a                 #=> 42
       p 'forty-two' if c.a? #=> 'forty-two'
-    
+
     #
     # fattrs works on object too 
     #
@@ -350,18 +343,23 @@ SAMPLES
 
 
 
-HISTORY
-  2.3.0
-    support for "object.fattrs.to_hash"
+# HISTORY
 
-  2.0.0:
-    support class/module inheritable attributes
+## 2.3.0
 
-  1.1.0:
-    ruby19 testing.  move to github.
+  support for "object.fattrs.to_hash"
 
-  1.0.2:
-    added Fattr shortcut for adding class/module level fattrs
+## 2.0.0:
+
+  support class/module inheritable attributes
+
+## 1.1.0:
+
+  ruby19 testing.  move to github.
+
+## 1.0.2:
+
+  added Fattr shortcut for adding class/module level fattrs
 
       class C
         Fattr 'children' => []
@@ -377,6 +375,7 @@ HISTORY
 
       p C.children #=> B
 
-  1.0.0:
-    port from attributes.rb retaining all the same features of that version of
-    attributes.rb
+## 1.0.0:
+
+  port from attributes.rb retaining all the same features of that version of
+  attributes.rb

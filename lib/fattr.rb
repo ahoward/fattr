@@ -1,237 +1,100 @@
+require 'fattr/attribute_set'
+require 'fattr/attribute'
+require 'fattr/attribute_parser'
+
 module Fattr
-  Fattr::Version = '2.3.0' unless Fattr.const_defined?(:Version)
-  def Fattr.version() Fattr::Version end
-
-  def Fattr.description
-    'a "fatter attr" for ruby'
+  # How we get this thing all going
+  #
+  def self.extended(other)
+    other.include(InstanceMethods)
   end
 
-  class List < ::Array
-    attr_accessor :object
+  def self.included(other)
+    other.include(InstanceMethods)
+  end
 
-    def initialize(*args, &block)
-      super(*args, &block)
+  def fattr(*args, **kwargs, &block)
+    attributes = AttributeParser.call(args, kwargs, block)
+    __define_attributes(attributes)
+  end
+  alias fattrs fattr
+
+  def Fattr(*args, **kwargs, &block)
+    attributes = AttributeParser.call(args, kwargs, block)
+    singleton_class.instance_exec do
+      __define_attributes(attributes)
     end
+  end
+  module_function :Fattr
 
-    def << element
-      super
-      self
-    ensure
-      uniq!
-      index!
-    end
-
-    def index!
-      @index ||= Hash.new
-      each{|element| @index[element.to_s] = true}
-    end
-
-    def include?(element)
-      @index ||= Hash.new
-      @index[element.to_s] ? true : false
-    end
-
-    def initializers
-      @initializers ||= Hash.new
-    end
-
-    def to_hash
-      if @object
-        list = @object.class.fattrs + @object.fattrs
-        list.inject(Hash.new){|hash, fattr| hash.update(fattr => @object.send(fattr))}
+  module InstanceMethods
+    def fattrs
+      Hash.new.tap do |h|
+        self.class.fattrs.each do |name|
+          h[name] = self.send(name)
+        end
       end
     end
-
-    def to_h
-      to_hash
-    end
-
-    def for(object)
-      @object = object
-      self
-    end
   end
 
-  class Result < ::Hash
-    attr_accessor :object
+  private
 
-    def for(object)
-      @object = object
-      self
+  def __define_attributes(attributes)
+    attributes.each do |attr|
+      __define_fattr(attr)
     end
+    __fattrs
   end
 
-  def fattrs(*args, &block)
-    unless args.empty?
-      returned = Fattr::Result.new
+  def __define_fattr(attr)
+    __fattrs << attr
+    __define_reader(attr)
+    __define_writer(attr)
+    __define_question(attr)
+    __define_bang(attr)
+  end
 
-      args.flatten!
-      args.compact!
-
-      all_hashes = args.all?{|arg| Hash===arg}
-
-      names_and_configs = {}
-
-      if all_hashes
-        args.each do |hash|
-          hash.each do |key, val|
-            name = key.to_s
-            config = Hash===val ? val : {:default => val}
-            names_and_configs[name] = config
-          end
-        end
+  def __define_reader(attr)
+    name = attr.name
+    varname = "@#{name}"
+    define_method(name.to_sym) do |*args|
+      if value = args.shift then
+        instance_variable_set(varname, value)
+      elsif instance_variable_defined?(varname)
+        instance_variable_get(varname)
       else
-        config = Hash===args.last ? args.pop : {}
-        names = args.select{|arg| Symbol===arg or String===arg}.map{|arg| arg.to_s}
-        names.each do |name|
-          names_and_configs[name] = config
-        end
-      end
-
-      initializers = __fattrs__.initializers
-
-      names_and_configs.each do |name, config|
-        raise(NameError, "bad instance variable name '@#{ name }'") if("@#{ name }" =~ %r/[!?=]$/o)
-
-        name = name.to_s
-
-        default = nil
-        default = config[:default] if config.has_key?(:default)
-        default = config['default'] if config.has_key?('default')
-
-        inheritable = false
-        if Module===self
-          inheritable = config[:inheritable] if config.has_key?(:inheritable)
-          inheritable = config['inheritable'] if config.has_key?('inheritable')
-        end
-
-        initialize = (
-          if inheritable
-            lambda do |*ignored|
-              parents = ancestors[1..-1]
-              catch(:value) do
-                parents.each do |parent|
-                  throw(:value, parent.send(name)) if parent.respond_to?(name)
-                end
-                block ? block.call : default
-              end
-            end
-          else
-            block || lambda{|*ignored| default }
-          end
-        )
-
-        initializer = lambda do |this|
-          Object.instance_method('instance_eval').bind(this).call(&initialize)
-        end
-
-        initializer_id = initializer.object_id
-
-        __fattrs__.initializers[name] = initializer
-
-        compile = lambda do |code|
-          begin
-            module_eval(code)
-          rescue SyntaxError
-            raise(SyntaxError, "\n#{ code }\n")
-          end
-        end
-
-      # setter, block invocation caches block
-        code = <<-code
-          def #{ name }=(*value, &block)
-            value.unshift block if block
-            @#{ name } = value.first
-          end
-        code
-        compile[code]
-
-      # getter, providing a value or block causes it to acts as setter
-        code = <<-code
-          def #{ name }(*value, &block)
-            value.unshift block if block
-            return self.send('#{ name }=', value.first) unless value.empty?
-            #{ name }! unless defined? @#{ name }
-            @#{ name }
-          end
-        code
-        compile[code]
-
-      # bang method re-calls any initializer given at declaration time
-=begin
-        code = <<-code
-          def #{ name }!
-            initializer = ObjectSpace._id2ref #{ initializer_id }
-            self.#{ name } = initializer.call(self)
-            @#{ name }
-          end
-        code
-        compile[code]
-=end
-
-        module_eval do
-          define_method :"#{ name }!" do
-            self.send :"#{ name }=", initializer.call(self)
-            self.instance_variable_get :"@#{name}"
-          end
-        end
-
-      # query simply defers to getter - cast to bool
-        code = <<-code
-          def #{ name }?
-            self.#{ name }
-          end
-        code
-        compile[code]
-
-        fattrs << name
-        returned[name] = initializer
-      end
-
-      returned
-    else
-      begin
-        __fattr_list__
-      rescue NameError, TypeError
-        singleton_class =
-          class << self
-            self
-          end
-        klass = self
-        singleton_class.module_eval do
-          fattr_list = List.new
-          define_method('fattr_list'){ klass == self ? fattr_list : raise(NameError) }
-          alias_method '__fattr_list__', 'fattr_list'
-        end
-        __fattr_list__
+        # we want the lambda to be executed within the context of self
+        value = instance_exec(&attr.default)
+        instance_variable_set(varname, value)
       end
     end
   end
 
-  %w( __fattrs__ __fattr__ fattr ).each{|dst| alias_method(dst, 'fattrs')}
-end
-
-class Module
-  include Fattr
-
-  def Fattrs(*args, &block)
-    class << self
-      self
-    end.module_eval{ __fattrs__(*args, &block) }.for(self)
+  def __define_writer(attr)
+    define_method("#{attr.name}=") do |arg|
+      instance_variable_set("@#{attr.name}", arg)
+    end
   end
 
-  def Fattr(*args, &block)
-    class << self
-      self
-    end.module_eval{ __fattr__(*args, &block) }.for(self)
+  def __define_question(attr)
+    define_method("#{attr.name}?") do
+      !!instance_variable_get("@#{attr.name}")
+    end
   end
-end
 
-class Object
-  def fattrs(*args, &block)
-    class << self
-      self
-    end.__fattrs__(*args, &block).for(self)
+  def __define_bang(attr)
+    define_method("#{attr.name}!") do
+      value = instance_exec(&attr.default)
+      if attr.inheritable? then
+        parent = ancestors[1..-1].find { |a| a.respond_to?(attr.name) }
+        value = parent.send(attr.name) if parent
+      end
+      instance_variable_set("@#{attr.name}", value)
+    end
   end
-  %w( __fattrs__ __fattr__ fattr ).each{|dst| alias_method(dst, 'fattrs')}
+
+  def __fattrs
+    @__fattrs ||= AttributeSet.new
+  end
 end
+require 'fattr/version'
