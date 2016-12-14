@@ -2,11 +2,6 @@ require 'fattr/globally'
 
 Testing Fattr do
 
-  testing 'version is available' do
-    assert{ Fattr::Version.match(/\d+\.\d+\.\d+/) }
-    assert{ Fattr.version.match(/\d+\.\d+\.\d+/) }
-  end
-
   testing 'that a basic set of methods are defined' do
     o = Class.new{ fattr :a }.new
     %w( a a= a? ).each do |msg|
