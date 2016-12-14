@@ -154,19 +154,19 @@ Testing Fattr do
      a = Class.new{ Fattr :x => 42 }
      b = Class.new(a)
      c = Class.new(b)
-  
+
      def a.name() 'a' end
      def b.name() 'b' end
      def c.name() 'c' end
-  
+
      assert{ c.x==42 }
      assert{ b.x==42 }
      assert{ a.x==42 }
-  
+
      assert{ b.x=42.0 }
      assert{ b.x==42.0 }
      assert{ a.x==42 }
-  
+
      assert{ a.x='forty-two' }
      assert{ a.x=='forty-two' }
      assert{ b.x==42.0 }
