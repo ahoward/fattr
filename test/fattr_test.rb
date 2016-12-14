@@ -142,14 +142,13 @@ Testing Fattr do
     assert{ c.a == 42 }
   end
 
-  # testing 'module fattr shortcut' do
-  #   m = Module.new{
-  #     Fattr :a => 42
-  #   }
-  #   assert{ m.a==42 }
-  # end
+  testing 'module fattr shortcut' do
+    m = Module.new{
+      Fattr :a => 42
+    }
+    assert{ m.a == 42 }
+  end
 
-   testing 'that fattrs support simple class inheritable attributes' do
      #a = Class.new{ Fattr :x, :default => 42, :inheritable => true }
      a = Class.new{ Fattr :x => 42 }
      b = Class.new(a)
