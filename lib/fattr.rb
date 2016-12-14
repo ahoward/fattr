@@ -1,4 +1,8 @@
-require 'fattr/attributes'
+require 'fattr/attribute_set'
+require 'fattr/attribute'
+require 'fattr/attribute_parser'
+
+require 'pry'
 module Fattr
   # How we get this thing all going
   #
@@ -6,19 +10,21 @@ module Fattr
     other.include(InstanceMethods)
   end
 
-  # def self.included(other)
-  #   other.include(InstanceMethods)
-  #   other.extend(ClassMethods)
-  # end
+  def self.included(other)
+    other.include(InstanceMethods)
+  end
 
-  def fattr(*attributes, &block)
-    __define_attributes(attributes: attributes, default: block)
+  def fattr(*args, **kwargs, &block)
+    attributes = AttributeParser.call(args, kwargs, block)
+    __define_attributes(attributes)
   end
   alias fattrs fattr
 
-  def Fattr(*attributes, &block)
+  def Fattr(*args, **kwargs, &block)
+    require 'pry'
+    attributes = AttributeParser.call(args, kwargs, block)
     singleton_class.instance_exec do
-      __define_attributes(attributes: attributes, default: block)
+      __define_attributes(attributes)
     end
   end
   module_function :Fattr
@@ -35,38 +41,23 @@ module Fattr
 
   private
 
-  def __initializer_from(thing)
-    if thing.kind_of?(Proc)
-      thing
-    else
-      lambda{ |*args| thing }
-    end
-  end
-
-  def __define_attributes(attributes:, default:)
-    attributes.flatten.each do |arg|
-      case arg
-      when Symbol, String
-        __define_fattr(arg, __initializer_from(default))
-      when Hash
-        arg.each_pair do |key, val|
-          __define_fattr(key, __initializer_from(val))
-        end
-      else
-        raise ArgumentError, "No idea how to deal with a #{arg.inspect}"
-      end
+  def __define_attributes(attributes)
+    attributes.each do |attr|
+      __define_fattr(attr)
     end
     __fattrs
   end
 
-  def __define_fattr(name, default_lambda)
-    __fattrs << name.to_s
-    __define_reader(name, default_lambda)
-    __define_writer(name)
-    __define_question(name)
+  def __define_fattr(attr)
+    __fattrs << attr
+    __define_reader(attr)
+    __define_writer(attr)
+    __define_question(attr)
+ #   __define_bang(attr)
   end
 
-  def __define_reader(name, default)
+  def __define_reader(attr)
+    name = attr.name
     varname = "@#{name}"
     define_method(name.to_sym) do |*args|
       if value = args.shift then
@@ -75,26 +66,33 @@ module Fattr
         instance_variable_get(varname)
       else
         # we want the lambda to be executed within the context of self
-        value = instance_exec(&default)
+        value = instance_exec(&attr.default)
         instance_variable_set(varname, value)
       end
     end
   end
 
-  def __define_writer(name)
-    define_method("#{name}=") do |arg|
-      instance_variable_set("@#{name}", arg)
+  def __define_writer(attr)
+    define_method("#{attr.name}=") do |arg|
+      instance_variable_set("@#{attr.name}", arg)
     end
   end
 
-  def __define_question(name)
-    define_method("#{name}?") do
-      !!instance_variable_get("@#{name}")
+  def __define_question(attr)
+    define_method("#{attr.name}?") do
+      !!instance_variable_get("@#{attr.name}")
+    end
+  end
+
+  def __define_bang(attr)
+    define_method("#{attr.name}!") do
+      value = instance_exec(&attr.default)
+      instance_variable_set("@#{name}", value)
     end
   end
 
   def __fattrs
-    @__fattrs ||= Attributes.new
+    @__fattrs ||= AttributeSet.new
   end
 end
 require 'fattr/version'
