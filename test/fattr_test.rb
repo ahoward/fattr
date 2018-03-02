@@ -157,7 +157,7 @@ BEGIN {
 
       def self.testing(*args, &block)
         method = ["test", testno, slug_for(*args)].delete_if{|part| part.empty?}.join('_')
-        define_method("test_#{ testno }_#{ slug_for(*args) }", &block)
+        define_method(method, &block)
       end
 
       alias_method '__assert__', 'assert'
@@ -177,7 +177,7 @@ BEGIN {
         end
       end
 
-      module_eval &block
+      module_eval(&block)
       self
     end
   end

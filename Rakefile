@@ -4,7 +4,7 @@ This.email = "ara.t.howard@gmail.com"
 This.homepage = "https://github.com/ahoward/#{ This.lib }"
 
 task :license do
-  open('LICENSE', 'w'){|fd| fd.puts "same as ruby's"}
+  open('LICENSE', 'w'){|fd| fd.puts "Ruby"}
 end
 
 task :default do
@@ -93,7 +93,7 @@ task :gemspec do
   test_files  = "test/#{ lib }.rb" if File.file?("test/#{ lib }.rb")
   summary     = object.respond_to?(:summary) ? object.summary : "summary: #{ lib } kicks the ass"
   description = object.respond_to?(:description) ? object.description : "description: #{ lib } kicks the ass"
-  license     = object.respond_to?(:license) ? object.license : "same as ruby's"
+  license     = object.respond_to?(:license) ? object.license : "Ruby"
 
   if This.extensions.nil?
     This.extensions = []
@@ -104,39 +104,51 @@ task :gemspec do
   end
   extensions = [extensions].flatten.compact
 
+  if This.dependencies.nil?
+    dependencies = []
+  else
+    case This.dependencies
+      when Hash
+        dependencies = This.dependencies.values
+      when Array
+        dependencies = This.dependencies
+    end
+  end
+
   template = 
     if test(?e, 'gemspec.erb')
       Template{ IO.read('gemspec.erb') }
     else
       Template {
         <<-__
-          ## #{ lib }.gemspec
+          ## <%= lib %>.gemspec
           #
 
           Gem::Specification::new do |spec|
-            spec.name = #{ lib.inspect }
-            spec.version = #{ version.inspect }
+            spec.name = <%= lib.inspect %>
+            spec.version = <%= version.inspect %>
             spec.platform = Gem::Platform::RUBY
-            spec.summary = #{ lib.inspect }
-            spec.description = #{ description.inspect }
-            spec.license = #{ license.inspect }
+            spec.summary = <%= lib.inspect %>
+            spec.description = <%= description.inspect %>
+            spec.license = <%= license.inspect %>
 
-            spec.files =\n#{ files.sort.pretty_inspect }
-            spec.executables = #{ executables.inspect }
+            spec.files =\n<%= files.sort.pretty_inspect %>
+            spec.executables = <%= executables.inspect %>
             
             spec.require_path = "lib"
 
-            spec.test_files = #{ test_files.inspect }
+            spec.test_files = <%= test_files.inspect %>
 
-          ### spec.add_dependency 'lib', '>= version'
-          #### spec.add_dependency 'map'
+            <% dependencies.each do |lib_version| %>
+              spec.add_dependency(*<%= Array(lib_version).flatten.inspect %>)
+            <% end %>
 
-            spec.extensions.push(*#{ extensions.inspect })
+            spec.extensions.push(*<%= extensions.inspect %>)
 
-            spec.rubyforge_project = #{ This.rubyforge_project.inspect }
-            spec.author = #{ This.author.inspect }
-            spec.email = #{ This.email.inspect }
-            spec.homepage = #{ This.homepage.inspect }
+            spec.rubyforge_project = <%= This.rubyforge_project.inspect %>
+            spec.author = <%= This.author.inspect %>
+            spec.email = <%= This.email.inspect %>
+            spec.homepage = <%= This.homepage.inspect %>
           end
         __
       }
@@ -249,28 +261,35 @@ BEGIN {
 #
   This = OpenStruct.new
 
-  This.file = File.expand_path(__FILE__)
-  This.dir = File.dirname(This.file)
+  This.file   = File.expand_path(__FILE__)
+  This.dir    = File.dirname(This.file)
   This.pkgdir = File.join(This.dir, 'pkg')
 
-# grok lib
-#
-  lib = ENV['LIB']
-  unless lib
-    lib = File.basename(Dir.pwd).sub(/[-].*$/, '')
-  end
-  This.lib = lib
+  This.lib    = File.basename(Dir.pwd)
+  This._lib    = "#{ This.dir }/lib/#{ This.lib }/_lib.rb" 
 
-# grok version
+# load meta lib info
 #
-  version = ENV['VERSION']
-  unless version
-    require "./lib/#{ This.lib }"
-    This.name = lib.capitalize
-    This.object = eval(This.name)
-    version = This.object.send(:version)
+  a = Object.constants.dup
+  require This._lib
+  b = Object.constants.dup
+  added = b - a
+  const = added.first
+
+  if added.size > 1
+    STDERR.puts "WARNING: defined multiple constants #{ added.inspect } in #{ _lib }, using #{ const } !!!"
   end
-  This.version = version
+
+  This.const   = const
+  This.object  = Object.const_get(This.const)
+  This.name    = This.object.name
+  This.version = This.object.send(:version)
+
+# see if dependencies are export by the module
+#
+  if This.object.respond_to?(:dependencies)
+    This.dependencies = This.object.dependencies
+  end
 
 # we need to know the name of the lib an it's version
 #
@@ -279,12 +298,12 @@ BEGIN {
 
 # discover full path to this ruby executable
 #
-  c = Config::CONFIG
-  bindir = c["bindir"] || c['BINDIR']
+  c                 = RbConfig::CONFIG
+  bindir            = c["bindir"] || c['BINDIR']
   ruby_install_name = c['ruby_install_name'] || c['RUBY_INSTALL_NAME'] || 'ruby'
-  ruby_ext = c['EXEEXT'] || ''
-  ruby = File.join(bindir, (ruby_install_name + ruby_ext))
-  This.ruby = ruby
+  ruby_ext          = c['EXEEXT'] || ''
+  ruby              = File.join(bindir, (ruby_install_name + ruby_ext))
+  This.ruby         = ruby
 
 # some utils
 #

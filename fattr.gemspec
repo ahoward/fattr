@@ -3,19 +3,23 @@
 
 Gem::Specification::new do |spec|
   spec.name = "fattr"
-  spec.version = "2.2.2"
+  spec.version = "2.4.0"
   spec.platform = Gem::Platform::RUBY
   spec.summary = "fattr"
   spec.description = "a \"fatter attr\" for ruby"
-  spec.license = "same as ruby's"
+  spec.license = "Ruby"
 
   spec.files =
 ["LICENSE",
  "README",
  "README.erb",
  "Rakefile",
+ "fattr.gemspec",
  "lib",
+ "lib/fattr",
  "lib/fattr.rb",
+ "lib/fattr/_lib.rb",
+ "lib/fattr/version.rb",
  "samples",
  "samples/a.rb",
  "samples/b.rb",
@@ -25,6 +29,7 @@ Gem::Specification::new do |spec|
  "samples/f.rb",
  "samples/g.rb",
  "samples/h.rb",
+ "samples/i.rb",
  "test",
  "test/fattr_test.rb"]
 
@@ -34,8 +39,7 @@ Gem::Specification::new do |spec|
 
   spec.test_files = nil
 
-### spec.add_dependency 'lib', '>= version'
-#### spec.add_dependency 'map'
+  
 
   spec.extensions.push(*[])
 

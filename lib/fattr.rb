@@ -1,10 +1,7 @@
 module Fattr
-  Fattr::Version = '2.3.0' unless Fattr.const_defined?(:Version)
-  def Fattr.version() Fattr::Version end
+  require_relative 'fattr/_lib.rb'
 
-  def Fattr.description
-    'a "fatter attr" for ruby'
-  end
+  SEMAPHORE = Mutex.new
 
   class List < ::Array
     attr_accessor :object
@@ -88,21 +85,21 @@ module Fattr
         end
       end
 
-      initializers = __fattrs__.initializers
+      #initializers = __fattrs__.initializers
 
-      names_and_configs.each do |name, config|
+      names_and_configs.each do |name, _config|
         raise(NameError, "bad instance variable name '@#{ name }'") if("@#{ name }" =~ %r/[!?=]$/o)
 
         name = name.to_s
 
         default = nil
-        default = config[:default] if config.has_key?(:default)
-        default = config['default'] if config.has_key?('default')
+        default = _config[:default] if _config.has_key?(:default)
+        default = _config['default'] if _config.has_key?('default')
 
         inheritable = false
         if Module===self
-          inheritable = config[:inheritable] if config.has_key?(:inheritable)
-          inheritable = config['inheritable'] if config.has_key?('inheritable')
+          inheritable = _config[:inheritable] if _config.has_key?(:inheritable)
+          inheritable = _config['inheritable'] if _config.has_key?('inheritable')
         end
 
         initialize = (
@@ -125,7 +122,7 @@ module Fattr
           Object.instance_method('instance_eval').bind(this).call(&initialize)
         end
 
-        initializer_id = initializer.object_id
+        #initializer_id = initializer.object_id
 
         __fattrs__.initializers[name] = initializer
 
@@ -151,6 +148,7 @@ module Fattr
           def #{ name }(*value, &block)
             value.unshift block if block
             return self.send('#{ name }=', value.first) unless value.empty?
+            #SEMAPHORE.synchronize{ #{ name }! unless defined? @#{ name } }
             #{ name }! unless defined? @#{ name }
             @#{ name }
           end
